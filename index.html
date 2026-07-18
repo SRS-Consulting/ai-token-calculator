@@ -396,8 +396,9 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { Tiktoken } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/+esm";
-import { o200k_base, cl100k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/+esm";
+import { Tiktoken } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/lite/+esm";
+import { o200k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/o200k_base/+esm";
+import { cl100k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/cl100k_base/+esm";
 
 // ---- Pricing (USD per 1,000,000 tokens) ----
 const MODEL_PRICING = {
