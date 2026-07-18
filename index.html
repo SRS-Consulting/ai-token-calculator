@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:;">
+<title>Tokencraft — Token & Cost Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0a0d12;
+    --bg-1:#0e1420;
+    --panel:rgba(255,255,255,0.045);
+    --panel-border:rgba(255,255,255,0.09);
+    --panel-hover:rgba(255,255,255,0.07);
+    --teal:#2dd4bf;
+    --teal-bright:#5eead4;
+    --ink:#e7ecf3;
+    --ink-dim:#98a2b3;
+    --ink-faint:#5b6472;
+    --danger:#fb7185;
+    --mono:'JetBrains Mono', monospace;
+    --disp:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
+    --radius:20px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:var(--body);
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 600px at 12% -10%, rgba(45,212,191,0.14), transparent 60%),
+      radial-gradient(900px 700px at 100% 10%, rgba(94,234,212,0.08), transparent 55%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 55%, var(--bg-0));
+    min-height:100vh;
+    line-height:1.5;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--disp); font-weight:700; font-size:19px; letter-spacing:-0.02em;}
+  .brand-mark{
+    width:30px; height:30px; border-radius:8px;
+    background:linear-gradient(135deg, var(--teal), #0d9488);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:13px; font-weight:600; color:#04211d;
+  }
+  .nav-tag{
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+    border:1px solid var(--panel-border); padding:6px 12px; border-radius:100px;
+    background:var(--panel);
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    padding:64px 0 40px;
+    opacity:0; transform:translateY(14px);
+    animation:rise 0.7s ease forwards;
+  }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+
+  .eyebrow{
+    font-family:var(--mono); font-size:12.5px; color:var(--teal-bright);
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:18px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--teal-bright); box-shadow:0 0 10px var(--teal-bright);}
+
+  h1.headline{
+    font-family:var(--disp); font-weight:700; letter-spacing:-0.03em;
+    font-size:clamp(34px, 5.6vw, 58px); line-height:1.04; margin:0 0 20px;
+    max-width:800px;
+  }
+  h1.headline .accent{
+    background:linear-gradient(100deg, var(--teal-bright), var(--teal) 60%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{
+    font-size:17px; color:var(--ink-dim); max-width:560px; margin:0;
+  }
+
+  /* ---------- CARD SHELL ---------- */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* ---------- CALCULATOR ---------- */
+  .calc{
+    padding:32px;
+    margin:28px 0 20px;
+    opacity:0; transform:translateY(14px);
+    animation:rise 0.7s ease 0.1s forwards;
+  }
+  .calc-top{
+    display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between;
+    margin-bottom:26px;
+  }
+  .field-label{
+    font-family:var(--mono); font-size:11.5px; color:var(--ink-faint);
+    text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; display:block;
+  }
+  select#model{
+    appearance:none; -webkit-appearance:none;
+    background:rgba(255,255,255,0.05) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" stroke="%2398a2b3" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>') no-repeat right 14px center;
+    border:1px solid var(--panel-border);
+    color:var(--ink); font-family:var(--body); font-weight:500; font-size:14.5px;
+    padding:11px 40px 11px 16px; border-radius:var(--radius-sm);
+    min-width:220px; cursor:pointer;
+    transition:border-color 180ms ease, background-color 180ms ease;
+  }
+  select#model:hover{border-color:rgba(45,212,191,0.4); background-color:rgba(255,255,255,0.07);}
+  select#model:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+
+  .price-chip{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-dim);
+    background:rgba(255,255,255,0.04); border:1px solid var(--panel-border);
+    padding:9px 14px; border-radius:var(--radius-sm);
+  }
+  .price-chip b{color:var(--teal-bright); font-weight:600;}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:8px;}
+  @media (max-width:720px){ .grid-2{grid-template-columns:1fr;} }
+
+  .field{display:flex; flex-direction:column;}
+  .field-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;}
+  .field-title{font-family:var(--disp); font-weight:600; font-size:16px;}
+  .field-help{font-size:13px; color:var(--ink-faint); margin:0 0 10px;}
+
+  textarea{
+    width:100%; min-height:190px; resize:vertical;
+    background:rgba(0,0,0,0.22);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius-sm);
+    color:var(--ink); font-family:var(--body); font-size:14.5px; line-height:1.55;
+    padding:14px 16px;
+    transition:border-color 180ms ease, box-shadow 180ms ease;
+  }
+  textarea::placeholder{color:var(--ink-faint);}
+  textarea:hover{border-color:rgba(255,255,255,0.16);}
+  textarea:focus-visible{
+    outline:none; border-color:var(--teal);
+    box-shadow:0 0 0 3px rgba(45,212,191,0.15);
+  }
+
+  .counter-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:10px; font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+  }
+  .counter-row .count{color:var(--teal-bright); font-weight:600; font-size:13.5px;}
+
+  /* ---------- BUTTONS ---------- */
+  .actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px;}
+  button{
+    font-family:var(--body); font-weight:600; font-size:14.5px;
+    border-radius:var(--radius-sm); border:1px solid transparent;
+    padding:12px 22px; cursor:pointer;
+    transition:transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  }
+  button:active{transform:translateY(1px);}
+  button:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+
+  .btn-primary{
+    background:linear-gradient(135deg, var(--teal-bright), var(--teal) 80%);
+    color:#04211d;
+    box-shadow:0 6px 20px rgba(45,212,191,0.25);
+  }
+  .btn-primary:hover{box-shadow:0 8px 26px rgba(45,212,191,0.4); transform:translateY(-1px);}
+
+  .btn-ghost{
+    background:rgba(255,255,255,0.04); color:var(--ink);
+    border-color:var(--panel-border);
+  }
+  .btn-ghost:hover{background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2);}
+
+  .btn-outline{
+    background:transparent; color:var(--teal-bright);
+    border-color:rgba(45,212,191,0.35);
+  }
+  .btn-outline:hover{background:rgba(45,212,191,0.08); border-color:var(--teal);}
+
+  /* ---------- RESULTS ---------- */
+  .results{
+    padding:30px 32px;
+    margin-bottom:20px;
+    opacity:0; transform:translateY(14px);
+    animation:rise 0.7s ease 0.18s forwards;
+  }
+  .results-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;}
+  .results-head h2{font-family:var(--disp); font-size:18px; margin:0; font-weight:600;}
+  .status-dot{
+    font-family:var(--mono); font-size:11.5px; color:var(--ink-faint);
+    display:flex; align-items:center; gap:7px;
+  }
+  .status-dot .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint); transition:background-color 200ms ease, box-shadow 200ms ease;}
+  .status-dot.live .dot{background:var(--teal-bright); box-shadow:0 0 8px var(--teal-bright);}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media (max-width:820px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+
+  .stat{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius-sm);
+    padding:20px 18px;
+    transition:border-color 180ms ease, transform 180ms ease;
+  }
+  .stat:hover{border-color:rgba(45,212,191,0.3); transform:translateY(-2px);}
+  .stat-label{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;}
+  .stat-value{font-family:var(--disp); font-size:27px; font-weight:700; letter-spacing:-0.01em;}
+  .stat-value.tokens{color:var(--ink);}
+  .stat-value.cost{color:var(--teal-bright);}
+  .stat-value.total{color:var(--teal-bright);}
+  .stat-sub{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); margin-top:6px;}
+
+  .total-banner{
+    margin-top:16px; padding:18px 22px; border-radius:var(--radius-sm);
+    background:linear-gradient(120deg, rgba(45,212,191,0.12), rgba(45,212,191,0.03));
+    border:1px solid rgba(45,212,191,0.25);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  .total-banner .label{font-family:var(--body); font-size:14px; color:var(--ink-dim);}
+  .total-banner .value{font-family:var(--disp); font-size:32px; font-weight:700; color:var(--teal-bright);}
+
+  /* ---------- INFO SECTIONS ---------- */
+  .info-grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:20px; margin:20px 0 20px;}
+  @media (max-width:820px){ .info-grid{grid-template-columns:1fr;} }
+
+  .info-card{padding:28px;}
+  .info-card h3{font-family:var(--disp); font-size:17px; margin:0 0 14px; font-weight:600;}
+  .info-card p{color:var(--ink-dim); font-size:14.5px; margin:0 0 10px;}
+  .info-card p:last-child{margin-bottom:0;}
+  .info-card code{
+    font-family:var(--mono); font-size:13px; background:rgba(255,255,255,0.06);
+    padding:2px 6px; border-radius:5px; color:var(--teal-bright);
+  }
+
+  .steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:16px;}
+  .steps li{display:flex; gap:14px; align-items:flex-start;}
+  .step-num{
+    font-family:var(--mono); font-weight:600; font-size:13px; color:#04211d;
+    background:linear-gradient(135deg, var(--teal-bright), var(--teal));
+    width:26px; height:26px; min-width:26px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps p{margin:0; font-size:14px; color:var(--ink-dim); line-height:1.5;}
+  .steps b{color:var(--ink); font-weight:600;}
+
+  /* ---------- TOAST ---------- */
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%, 20px);
+    background:rgba(20,26,34,0.92); border:1px solid rgba(45,212,191,0.35);
+    color:var(--ink); font-family:var(--body); font-size:14px; font-weight:500;
+    padding:12px 20px; border-radius:100px; backdrop-filter:blur(10px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    opacity:0; pointer-events:none; transition:opacity 200ms ease, transform 200ms ease;
+    z-index:50;
+  }
+  #toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto;}
+
+  footer{
+    padding:36px 0 50px; text-align:center;
+    color:var(--ink-faint); font-size:12.5px; font-family:var(--body);
+    border-top:1px solid var(--panel-border); margin-top:20px;
+  }
+  footer a{color:var(--ink-dim);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <div class="brand"><span class="brand-mark">tC</span>Tokencal</div>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">Prompt cost calculator</div>
+    <h1 class="headline">Know your <span class="accent">token cost</span> before you hit send.</h1>
+    <p class="sub">Paste your prompt and expected response, pick a model, and get an exact token count and USD estimate — computed entirely in your browser.</p>
+  </header>
+
+  <section class="card calc">
+    <div class="calc-top">
+      <div>
+        <label class="field-label" for="model">Model</label>
+        <select id="model">
+          <option value="gpt-4o">gpt-4o</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="gpt-4-turbo">gpt-4-turbo</option>
+          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+        </select>
+      </div>
+      <div class="price-chip" id="priceChip">
+        Input <b>$5.00</b> / Output <b>$15.00</b> per 1M tokens
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-head"><span class="field-title">Input prompt</span></div>
+        <p class="field-help">Paste the system + user prompt you plan to send to the model.</p>
+        <textarea id="inputText" placeholder="e.g. You are a helpful assistant. Summarize the following article in 3 bullet points…" spellcheck="false"></textarea>
+        <div class="counter-row">
+          <span>tokens (live)</span>
+          <span class="count" id="inputCount">0</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-title">Output response</span></div>
+        <p class="field-help">Paste an actual response, or a rough draft of what you expect back.</p>
+        <textarea id="outputText" placeholder="e.g. • Point one…&#10;• Point two…&#10;• Point three…" spellcheck="false"></textarea>
+        <div class="counter-row">
+          <span>tokens (live)</span>
+          <span class="count" id="outputCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="calcBtn">Calculate cost</button>
+      <button class="btn-ghost" id="clearBtn">Clear all</button>
+      <button class="btn-outline" id="copyBtn">Copy results</button>
+    </div>
+  </section>
+
+  <section class="card results">
+    <div class="results-head">
+      <h2>Results</h2>
+      <div class="status-dot" id="statusDot"><span class="dot"></span><span id="statusText">waiting for input</span></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-label">Input tokens</div>
+        <div class="stat-value tokens" id="statInputTokens">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Output tokens</div>
+        <div class="stat-value tokens" id="statOutputTokens">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Input cost</div>
+        <div class="stat-value cost" id="statInputCost">$0.000000</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Output cost</div>
+        <div class="stat-value cost" id="statOutputCost">$0.000000</div>
+      </div>
+    </div>
+
+    <div class="total-banner">
+      <span class="label">Total estimated cost (<span id="totalTokensLabel">0</span> tokens)</span>
+      <span class="value" id="statTotalCost">$0.000000</span>
+    </div>
+  </section>
+
+  <section class="info-grid">
+    <div class="card info-card">
+      <h3>What's a token, and how does pricing work?</h3>
+      <p>A <b style="color:var(--ink)">token</b> is a chunk of text — roughly ¾ of a word in English. Models read and write text as tokens, not characters, so providers bill per token rather than per character.</p>
+      <p>Pricing is quoted per <code>1M tokens</code> and usually split into an input rate (what you send) and a higher output rate (what the model generates). This tool multiplies your counted tokens by the selected model's per-million rate and divides by 1,000,000.</p>
+      <p>Tokenization here runs via <code>js-tiktoken</code>, the same BPE encoding OpenAI's models use — so counts match approx. to production behavior, not a rough guess.</p>
+    </div>
+    <div class="card info-card">
+      <h3>How it works</h3>
+      <ul class="steps">
+        <li><span class="step-num">1</span><p><b>Paste your text.</b> Drop your prompt and expected response into the two boxes above.</p></li>
+        <li><span class="step-num">2</span><p><b>Pick a model.</b> Each model has its own per-token input/output pricing.</p></li>
+        <li><span class="step-num">3</span><p><b>Read your cost.</b> Token counts and USD cost update live, or hit Calculate for a fresh snapshot.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Pricing figures are approximate, illustrative, and may not reflect current provider rates — always confirm against the official pricing page before budgeting. Nothing you type ever leaves your browser.
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { Tiktoken } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/+esm";
+import { o200k_base, cl100k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/+esm";
+
+// ---- Pricing (USD per 1,000,000 tokens) ----
+const MODEL_PRICING = {
+  "gpt-4o":         { input: 5.00,  output: 15.00, encoding: "o200k_base" },
+  "gpt-4o-mini":    { input: 0.15,  output: 0.60,  encoding: "o200k_base" },
+  "gpt-4-turbo":    { input: 10.00, output: 30.00, encoding: "cl100k_base" },
+  "gpt-3.5-turbo":  { input: 0.50,  output: 1.50,  encoding: "cl100k_base" }
+};
+
+const encoders = {};
+function getEncoder(name){
+  if (encoders[name]) return encoders[name];
+  const ranks = name === "o200k_base" ? o200k_base : cl100k_base;
+  const enc = new Tiktoken(ranks);
+  encoders[name] = enc;
+  return enc;
+}
+
+function countTokens(text, encodingName){
+  if (!text) return 0;
+  try {
+    return getEncoder(encodingName).encode(text).length;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// ---- DOM refs ----
+const modelSelect   = document.getElementById("model");
+const priceChip      = document.getElementById("priceChip");
+const inputText      = document.getElementById("inputText");
+const outputText     = document.getElementById("outputText");
+const inputCountEl   = document.getElementById("inputCount");
+const outputCountEl  = document.getElementById("outputCount");
+
+const statInputTokens  = document.getElementById("statInputTokens");
+const statOutputTokens = document.getElementById("statOutputTokens");
+const statInputCost    = document.getElementById("statInputCost");
+const statOutputCost   = document.getElementById("statOutputCost");
+const statTotalCost    = document.getElementById("statTotalCost");
+const totalTokensLabel = document.getElementById("totalTokensLabel");
+const statusDot         = document.getElementById("statusDot");
+const statusText        = document.getElementById("statusText");
+const toast             = document.getElementById("toast");
+
+const calcBtn  = document.getElementById("calcBtn");
+const clearBtn = document.getElementById("clearBtn");
+const copyBtn  = document.getElementById("copyBtn");
+
+let lastResult = null;
+let toastTimer = null;
+
+function fmtInt(n){ return n.toLocaleString("en-US"); }
+function fmtUsd(n){ return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 }); }
+
+function animateValue(el, endValue, isInt){
+  const startText = el.textContent.replace(/[^0-9.]/g, "");
+  const start = parseFloat(startText) || 0;
+  const duration = 350;
+  const startTime = performance.now();
+
+  function tick(now){
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + (endValue - start) * eased;
+    el.textContent = isInt ? fmtInt(Math.round(current)) : fmtUsd(current);
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = isInt ? fmtInt(endValue) : fmtUsd(endValue);
+  }
+  requestAnimationFrame(tick);
+}
+
+function updatePriceChip(){
+  const cfg = MODEL_PRICING[modelSelect.value];
+  priceChip.textContent = "";
+  const parts = [
+    "Input ",
+    null, // bold input
+    " / Output ",
+    null, // bold output
+    " per 1M tokens"
+  ];
+  const frag = document.createDocumentFragment();
+  frag.appendChild(document.createTextNode("Input "));
+  const b1 = document.createElement("b");
+  b1.textContent = "$" + cfg.input.toFixed(2);
+  frag.appendChild(b1);
+  frag.appendChild(document.createTextNode(" / Output "));
+  const b2 = document.createElement("b");
+  b2.textContent = "$" + cfg.output.toFixed(2);
+  frag.appendChild(b2);
+  frag.appendChild(document.createTextNode(" per 1M tokens"));
+  priceChip.appendChild(frag);
+}
+
+function updateLiveCounts(){
+  const cfg = MODEL_PRICING[modelSelect.value];
+  const inTok = countTokens(inputText.value, cfg.encoding);
+  const outTok = countTokens(outputText.value, cfg.encoding);
+  inputCountEl.textContent = fmtInt(inTok);
+  outputCountEl.textContent = fmtInt(outTok);
+  return { inTok, outTok, cfg };
+}
+
+function setStatusLive(isLive){
+  statusDot.classList.toggle("live", isLive);
+  statusText.textContent = isLive ? "live" : "waiting for input";
+}
+
+function calculate(){
+  const { inTok, outTok, cfg } = updateLiveCounts();
+  const inputCost = (inTok / 1_000_000) * cfg.input;
+  const outputCost = (outTok / 1_000_000) * cfg.output;
+  const totalCost = inputCost + outputCost;
+  const totalTokens = inTok + outTok;
+
+  animateValue(statInputTokens, inTok, true);
+  animateValue(statOutputTokens, outTok, true);
+  animateValue(statInputCost, inputCost, false);
+  animateValue(statOutputCost, outputCost, false);
+  animateValue(statTotalCost, totalCost, false);
+  totalTokensLabel.textContent = fmtInt(totalTokens);
+
+  setStatusLive(inTok > 0 || outTok > 0);
+
+  lastResult = {
+    model: modelSelect.value,
+    inTok, outTok, totalTokens,
+    inputCost, outputCost, totalCost
+  };
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+// ---- Event listeners (no inline handlers) ----
+modelSelect.addEventListener("change", () => { updatePriceChip(); calculate(); });
+inputText.addEventListener("input", calculate);
+outputText.addEventListener("input", calculate);
+calcBtn.addEventListener("click", () => { calculate(); showToast("Recalculated"); });
+
+clearBtn.addEventListener("click", () => {
+  inputText.value = "";
+  outputText.value = "";
+  calculate();
+  showToast("Cleared");
+});
+
+copyBtn.addEventListener("click", async () => {
+  if (!lastResult) calculate();
+  const r = lastResult;
+  const summary =
+`Tokencraft — Token Cost Summary
+Model: ${r.model}
+Input tokens: ${r.inTok}
+Output tokens: ${r.outTok}
+Total tokens: ${r.totalTokens}
+Input cost: ${fmtUsd(r.inputCost)}
+Output cost: ${fmtUsd(r.outputCost)}
+Total cost: ${fmtUsd(r.totalCost)}`;
+  try {
+    await navigator.clipboard.writeText(summary);
+    showToast("Results copied to clipboard");
+  } catch (e) {
+    showToast("Copy failed — clipboard unavailable");
+  }
+});
+
+// ---- Init ----
+updatePriceChip();
+calculate();
+</script>
+</body>
+</html>
