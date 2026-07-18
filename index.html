@@ -287,7 +287,8 @@
 
 <div class="wrap">
   <nav>
-    <div class="brand"><span class="brand-mark">tC</span>Tokencal</div>
+    <div class="brand"><span class="brand-mark">tk</span>Tokencraft</div>
+    <div class="nav-tag">js-tiktoken · local &amp; private</div>
   </nav>
 
   <header class="hero">
@@ -376,7 +377,7 @@
       <h3>What's a token, and how does pricing work?</h3>
       <p>A <b style="color:var(--ink)">token</b> is a chunk of text — roughly ¾ of a word in English. Models read and write text as tokens, not characters, so providers bill per token rather than per character.</p>
       <p>Pricing is quoted per <code>1M tokens</code> and usually split into an input rate (what you send) and a higher output rate (what the model generates). This tool multiplies your counted tokens by the selected model's per-million rate and divides by 1,000,000.</p>
-      <p>Tokenization here runs via <code>js-tiktoken</code>, the same BPE encoding OpenAI's models use — so counts match approx. to production behavior, not a rough guess.</p>
+      <p>Tokenization here runs via <code>js-tiktoken</code>, the same BPE encoding OpenAI's models use — so counts match production behavior, not a rough guess.</p>
     </div>
     <div class="card info-card">
       <h3>How it works</h3>
@@ -397,8 +398,8 @@
 
 <script type="module">
 import { Tiktoken } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/lite/+esm";
-import { o200k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/o200k_base/+esm";
-import { cl100k_base } from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/cl100k_base/+esm";
+import o200k_base from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/o200k_base/+esm";
+import cl100k_base from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/cl100k_base/+esm";
 
 // ---- Pricing (USD per 1,000,000 tokens) ----
 const MODEL_PRICING = {
