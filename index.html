@@ -287,8 +287,7 @@
 
 <div class="wrap">
   <nav>
-    <div class="brand"><span class="brand-mark">tk</span>Tokencraft</div>
-    <div class="nav-tag">js-tiktoken · local &amp; private</div>
+    <div class="brand"><span class="brand-mark">tc</span>Tokencraft</div>
   </nav>
 
   <header class="hero">
@@ -302,15 +301,37 @@
       <div>
         <label class="field-label" for="model">Model</label>
         <select id="model">
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
-          <option value="gpt-4-turbo">gpt-4-turbo</option>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          <optgroup label="OpenAI GPT-5.6 — ~estimate">
+            <option value="gpt-5-6-sol">GPT-5.6 Sol</option>
+            <option value="gpt-5-6-terra">GPT-5.6 Terra</option>
+            <option value="gpt-5-6-luna">GPT-5.6 Luna</option>
+          </optgroup>
+          <optgroup label="OpenAI — exact (o200k_base)">
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4o-mini">GPT-4o mini</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          </optgroup>
+          <optgroup label="Anthropic — ~estimate">
+            <option value="claude-opus-4-8">Claude Opus 4.8</option>
+            <option value="claude-sonnet-5">Claude Sonnet 5</option>
+            <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+          </optgroup>
+          <optgroup label="Google — ~estimate">
+            <option value="gemini-3-5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-3-1-pro">Gemini 3.1 Pro</option>
+          </optgroup>
         </select>
       </div>
       <div class="price-chip" id="priceChip">
         Input <b>$5.00</b> / Output <b>$15.00</b> per 1M tokens
       </div>
+    </div>
+
+    <div class="field" style="max-width:280px; margin-bottom:20px;">
+      <label class="field-label" for="outTokensManual">Expected output tokens (optional override)</label>
+      <input type="number" id="outTokensManual" min="0" placeholder="leave blank to use pasted text"
+        style="background:rgba(0,0,0,0.22); border:1px solid var(--panel-border); border-radius:var(--radius-sm); color:var(--ink); font-family:var(--mono); font-size:14px; padding:10px 14px; width:100%;">
     </div>
 
     <div class="grid-2">
@@ -344,7 +365,10 @@
   <section class="card results">
     <div class="results-head">
       <h2>Results</h2>
-      <div class="status-dot" id="statusDot"><span class="dot"></span><span id="statusText">waiting for input</span></div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span id="accuracyBadge" class="nav-tag" style="font-size:11px; padding:5px 10px;">exact count</span>
+        <div class="status-dot" id="statusDot"><span class="dot"></span><span id="statusText">waiting for input</span></div>
+      </div>
     </div>
 
     <div class="stat-grid">
@@ -377,7 +401,7 @@
       <h3>What's a token, and how does pricing work?</h3>
       <p>A <b style="color:var(--ink)">token</b> is a chunk of text — roughly ¾ of a word in English. Models read and write text as tokens, not characters, so providers bill per token rather than per character.</p>
       <p>Pricing is quoted per <code>1M tokens</code> and usually split into an input rate (what you send) and a higher output rate (what the model generates). This tool multiplies your counted tokens by the selected model's per-million rate and divides by 1,000,000.</p>
-      <p>Tokenization here runs via <code>js-tiktoken</code>, the same BPE encoding OpenAI's models use — so counts match production behavior, not a rough guess.</p>
+      <p>Tokenization for GPT-4o, GPT-4o mini, GPT-4 Turbo, and GPT-3.5 Turbo runs via <code>js-tiktoken</code>, the same BPE encoding those models use in production — so those counts are exact. GPT-5.6 uses OpenAI's newer <code>o200k_harmony</code> tokenizer, which isn't yet available in the browser library this tool uses, so its counts are estimated. Anthropic and Google also haven't published browser-usable tokenizers for Claude or Gemini. All estimated counts use a ~4-characters-per-token approximation and are labeled accordingly.</p>
     </div>
     <div class="card info-card">
       <h3>How it works</h3>
@@ -390,7 +414,7 @@
   </section>
 
   <footer>
-    Pricing figures are approximate, illustrative, and may not reflect current provider rates — always confirm against the official pricing page before budgeting. Nothing you type ever leaves your browser.
+    Prices verified against OpenAI, Anthropic, and Google's public pricing pages as of July 2026, but providers change rates without notice — always confirm before budgeting. Claude Sonnet 5 is shown at its introductory $2.00/$10.00 per‑million‑token rate, active through August 31, 2026, after which standard pricing is $3.00/$15.00. Gemini 3.1 Pro's rate shown here applies to prompts under ~200K tokens; longer prompts are billed at a higher tier. GPT-5.6 (Sol/Terra/Luna) is a recent OpenAI release with some reports describing it as a limited preview rather than fully general availability — verify access before relying on it. Claude, Gemini, and GPT-5.6 token counts are character-based estimates, not exact BPE counts. Nothing you type ever leaves your browser.
   </footer>
 </div>
 
@@ -402,11 +426,26 @@ import o200k_base from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/o2
 import cl100k_base from "https://cdn.jsdelivr.net/npm/js-tiktoken@1.0.15/ranks/cl100k_base/+esm";
 
 // ---- Pricing (USD per 1,000,000 tokens) ----
+// OpenAI rates: platform.openai.com/docs/pricing. Claude rates: anthropic.com/pricing.
+// Verified as of July 2026 — always confirm against the provider's live pricing page.
 const MODEL_PRICING = {
-  "gpt-4o":         { input: 5.00,  output: 15.00, encoding: "o200k_base" },
-  "gpt-4o-mini":    { input: 0.15,  output: 0.60,  encoding: "o200k_base" },
-  "gpt-4-turbo":    { input: 10.00, output: 30.00, encoding: "cl100k_base" },
-  "gpt-3.5-turbo":  { input: 0.50,  output: 1.50,  encoding: "cl100k_base" }
+  "gpt-4o":           { input: 2.50, output: 10.00, encoding: "o200k_base",  exact: true },
+  "gpt-4o-mini":      { input: 0.15, output: 0.60,  encoding: "o200k_base",  exact: true },
+  "gpt-4-turbo":       { input: 10.00, output: 30.00, encoding: "cl100k_base", exact: true },
+  "gpt-3.5-turbo":     { input: 0.50, output: 1.50,  encoding: "cl100k_base", exact: true },
+  // GPT-5.6 uses OpenAI's newer o200k_harmony tokenizer, which js-tiktoken does not
+  // currently ship ranks for in the browser — so these counts are estimated, not exact.
+  "gpt-5-6-sol":       { input: 5.00, output: 30.00, encoding: "estimate",   exact: false },
+  "gpt-5-6-terra":     { input: 2.50, output: 15.00, encoding: "estimate",   exact: false },
+  "gpt-5-6-luna":      { input: 1.00, output: 6.00,  encoding: "estimate",   exact: false },
+  // Claude has no published browser tokenizer, so counts are a character-based
+  // estimate (~4 chars/token), not an exact BPE count like the OpenAI models above.
+  "claude-opus-4-8":   { input: 5.00, output: 25.00, encoding: "estimate",   exact: false },
+  "claude-sonnet-5":    { input: 2.00, output: 10.00, encoding: "estimate",   exact: false }, // introductory rate through Aug 31, 2026; standard $3/$15 after
+  "claude-haiku-4-5":   { input: 1.00, output: 5.00,  encoding: "estimate",   exact: false },
+  // Google hasn't published a browser tokenizer for Gemini either — same estimate method.
+  "gemini-3-5-flash":  { input: 1.50, output: 9.00,  encoding: "estimate",   exact: false },
+  "gemini-3-1-pro":     { input: 2.00, output: 12.00, encoding: "estimate",   exact: false }
 };
 
 const encoders = {};
@@ -420,6 +459,11 @@ function getEncoder(name){
 
 function countTokens(text, encodingName){
   if (!text) return 0;
+  if (encodingName === "estimate") {
+    // No public browser tokenizer is published for Claude models, so this is a
+    // rough character-based estimate (~4 characters per token), not an exact count.
+    return Math.ceil(text.length / 4);
+  }
   try {
     return getEncoder(encodingName).encode(text).length;
   } catch (e) {
@@ -443,6 +487,8 @@ const statTotalCost    = document.getElementById("statTotalCost");
 const totalTokensLabel = document.getElementById("totalTokensLabel");
 const statusDot         = document.getElementById("statusDot");
 const statusText        = document.getElementById("statusText");
+const accuracyBadge     = document.getElementById("accuracyBadge");
+const outTokensManual   = document.getElementById("outTokensManual");
 const toast             = document.getElementById("toast");
 
 const calcBtn  = document.getElementById("calcBtn");
@@ -492,15 +538,25 @@ function updatePriceChip(){
   b2.textContent = "$" + cfg.output.toFixed(2);
   frag.appendChild(b2);
   frag.appendChild(document.createTextNode(" per 1M tokens"));
+  if (!cfg.exact) {
+    frag.appendChild(document.createTextNode(" · tokens estimated"));
+  }
   priceChip.appendChild(frag);
 }
 
 function updateLiveCounts(){
   const cfg = MODEL_PRICING[modelSelect.value];
   const inTok = countTokens(inputText.value, cfg.encoding);
-  const outTok = countTokens(outputText.value, cfg.encoding);
-  inputCountEl.textContent = fmtInt(inTok);
-  outputCountEl.textContent = fmtInt(outTok);
+
+  // If the user typed a manual "expected output tokens" override, that wins;
+  // otherwise fall back to counting the pasted Output Response text.
+  const manualVal = outTokensManual.value.trim();
+  const outTok = manualVal !== "" && !isNaN(manualVal)
+    ? Math.max(0, Math.round(Number(manualVal)))
+    : countTokens(outputText.value, cfg.encoding);
+
+  inputCountEl.textContent = (cfg.exact ? "" : "~") + fmtInt(inTok);
+  outputCountEl.textContent = (cfg.exact ? "" : "~") + fmtInt(outTok);
   return { inTok, outTok, cfg };
 }
 
@@ -525,8 +581,13 @@ function calculate(){
 
   setStatusLive(inTok > 0 || outTok > 0);
 
+  accuracyBadge.textContent = cfg.exact ? "exact count" : "~ approx · estimated cost";
+  accuracyBadge.style.color = cfg.exact ? "var(--teal-bright)" : "var(--ink-dim)";
+  accuracyBadge.style.borderColor = cfg.exact ? "rgba(45,212,191,0.35)" : "var(--panel-border)";
+
   lastResult = {
     model: modelSelect.value,
+    exact: cfg.exact,
     inTok, outTok, totalTokens,
     inputCost, outputCost, totalCost
   };
@@ -543,6 +604,7 @@ function showToast(msg){
 modelSelect.addEventListener("change", () => { updatePriceChip(); calculate(); });
 inputText.addEventListener("input", calculate);
 outputText.addEventListener("input", calculate);
+outTokensManual.addEventListener("input", calculate);
 calcBtn.addEventListener("click", () => { calculate(); showToast("Recalculated"); });
 
 clearBtn.addEventListener("click", () => {
@@ -557,13 +619,13 @@ copyBtn.addEventListener("click", async () => {
   const r = lastResult;
   const summary =
 `Tokencraft — Token Cost Summary
-Model: ${r.model}
+Model: ${r.model}${r.exact ? "" : " (estimated token count)"}
 Input tokens: ${r.inTok}
 Output tokens: ${r.outTok}
 Total tokens: ${r.totalTokens}
-Input cost: ${fmtUsd(r.inputCost)}
-Output cost: ${fmtUsd(r.outputCost)}
-Total cost: ${fmtUsd(r.totalCost)}`;
+Input: ${fmtUsd(r.inputCost)}
+Output: ${fmtUsd(r.outputCost)}
+Total: ${fmtUsd(r.totalCost)}`;
   try {
     await navigator.clipboard.writeText(summary);
     showToast("Results copied to clipboard");
